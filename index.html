@@ -22,6 +22,13 @@
                 width :100%;
                 height: 70%;
             }
+            .infoWindow{
+                font-size:14px;
+                margin:10px;
+                margin-bottom:15px;
+                width:200px;
+                height:auto;
+            }
         </style>
         <style>
             #my-spinner {
@@ -220,41 +227,45 @@
                                 async: false,
                                 success: function(res) {
                                     console.log(res);
-                                    if(res.stores.length>0){
-                                        for(var i=0; i<res.stores.length; i++){
-                                            var lat = res.stores[i].lat;
-                                            var lng = res.stores[i].lng;
-                                            var addr = res.stores[i].addr;
-                                            var name = res.stores[i].name;
-                                            var remain = res.stores[i].remain_stat;
-                                            var created_at = res.stores[i].created_at;
-                                            var stock_at = res.stores[i].stock_at;
+                                    if(res.stores){
+                                        if(res.stores.length>0){
+                                            for(var i=0; i<res.stores.length; i++){
+                                                var lat = res.stores[i].lat;
+                                                var lng = res.stores[i].lng;
+                                                var addr = res.stores[i].addr;
+                                                var name = res.stores[i].name;
+                                                var remain = res.stores[i].remain_stat;
+                                                var created_at = res.stores[i].created_at;
+                                                var stock_at = res.stores[i].stock_at;
 
-                                            var count = "품절";
+                                                var count = "품절";
 
-                                            if(remain=="plenty"){
-                                                count = "100개 이상";
-                                            }else if(remain=="some"){
-                                                count = "30개이상 100개 미만";
-                                            }else if(remain=="few"){
-                                                count = "2개이상 30개미만"
-                                            }else{
-                                                count = "품절";
+                                                if(remain=="plenty"){
+                                                    count = "100개 이상";
+                                                }else if(remain=="some"){
+                                                    count = "30개이상 100개 미만";
+                                                }else if(remain=="few"){
+                                                    count = "2개이상 30개미만"
+                                                }else{
+                                                    count = "품절";
+                                                }
+
+                                                var content = '<div class="infoWindow" style="">';
+                                                content += name+"<br>";
+                                                //content += '<span style="font-size:8px;">'+addr+"</span><br>";
+                                                content += "재고 : "+count+"<br>";
+                                                content += "기준시각 : "+created_at+"<br>";
+                                                content += "입고시간 "+stock_at+"";
+
+                                                content +="</div>";
+                                                var storePosition = new kakao.maps.LatLng(lat, lng);
+                                                var marker = createStoreMarkers(storePosition,remain,content);
+                                                storesMarkers.push(marker);
                                             }
-
-                                            var content = '<div style="font-size:10px;">';
-                                            content += name+"<br>";
-                                            //content += '<span style="font-size:8px;">'+addr+"</span><br>";
-                                            content += "재고 : "+count+"<br>";
-                                            content += "기준시각 : "+created_at+"<br>";
-                                            content += "입고시간 "+stock_at+"";
-
-                                            content +="</div>";
-                                            var storePosition = new kakao.maps.LatLng(lat, lng);
-                                            var marker = createStoreMarkers(storePosition,remain,content);
-                                            storesMarkers.push(marker);
+                                            //panTo(lat, lng);
+                                        }else{
+                                            alert("API 서버가 응답하지 않습니다.");
                                         }
-                                        //panTo(lat, lng);
                                     }
                                 },
                                 complete : function(){
@@ -335,10 +346,10 @@
                         };
                     */
 
-                    var imageSize = new kakao.maps.Size(20, 15),
+                    var imageSize = new kakao.maps.Size(20, 20),
                         imageOptions = {   
-                            spriteOrigin: new kakao.maps.Point(0, 15),    
-                            spriteSize: new kakao.maps.Size(20, 50)  
+                            spriteOrigin: new kakao.maps.Point(0,0),    
+                            spriteSize: new kakao.maps.Size(20, 20)  
                         };
                     var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),    
                         marker = createMarker(storePosition, markerImage, content);  
