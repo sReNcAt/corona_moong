@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no">
+        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=87066da1cea133cd68af001bfc14d3e4"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script
+                src="https://code.jquery.com/jquery-3.4.1.min.js"
+                integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+                crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+        <style>
+            body {
+                width: 100%;
+                height: 100%;
+            }
+            .content {
+                min-height: 500px;
+                width :100%;
+                height: 70%;
+            }
+        </style>
+        <style>
+            #my-spinner {
+                width: 100%; height: 100%;
+                top: 0; left: 0;
+                display: none;
+                opacity: .6;
+                background: silver;
+                position: fixed;
+                z-index: 3
+            }
+            #my-spinner div {
+                width: 100%; height: 100%;
+                display: table;
+            }
+            #my-spinner span {
+                display: table-cell;
+                text-align: center;
+                vertical-align: middle;
+            }
+            #my-spinner img {
+                background: white;
+                padding: 1em;
+                border-radius: .7em;
+            }
+        </style>
+    </head>
+    <body>
+        <div id='my-spinner'>
+            <div><span>
+                <img src='//cdnjs.cloudflare.com/ajax/libs/galleriffic/2.0.1/css/loader.gif'>
+                </span></div>
+        </div>
+        <div>
+            <div class="content" id="map"></div>
+        </div>
+        <div class="container">
+            <button class="btn btn-primary" id="reLoad">지도 중심으로 불러오기</button><br>
+            <u style="font-size:10px;">* 꼭 사파리, 크롬등 브라우저로 실행해주세요<br>
+                카카오톡,페이스북,인스타등에서 링크로 들어온경우 미작동 가능성 존재</u>
+            <h5>위치 반경 5KM 이내만 표시됩니다.</h5>
+            <h6><u>한국정보화진흥원 공공데이터활용지원센터에서</u><br> 공개한 자료를 바탕으로 제작되었으며</h6>
+            <h6><u>3월 15일까지는 서비스의 안정적 운영을 지켜보기 위하여 베타서비스 자료</u><br>를 제공한다고 합니다.</h6>
+            <h6>서비스되는 재고 현황 정보는 데이터 처리 및<br>전송으로 인해 실제 현장 판매처의 현황과<br><u>5분~10분</u> 정도의 차이가 있습니다.</h6>
+            <h6> 일부 약국에서는 번호표 배부 후 판매하는 약국도 있어 서비스되는 정보가 번호표 배부 현황을 반영하지는 못합니다.</h6>
+            마스크 재고 현황은 4단계 구간 정보로 제공하며<br>
+            <table class="table">
+                <tr>
+                    <td class="table-success">100개 이상 : 충분</td><td class="table-success">녹색</td>
+                </tr>
+                <tr>
+                    <td class="table-warning">100개 미만(99개~30개) : 보통</td><td class="table-warning">노랑색</td>
+                </tr>
+                <tr>
+                    <td class="table-danger">30개 미만(29개~2개) : 부족</td><td class="table-danger">빨강색</td>
+                </tr>
+                <tr>
+                    <td class="table-dark">1개~0개 : 없음 또는 판매전</td><td class="table-dark">회색</td>
+                </tr>
+            </table>
+            <u>서버에...데이터 일체 저장하지 않습니다.</u>
+            문의 : srencat@naver.com
+        </div>
+        <script>
+
+            var plenty = "/plenty.png";
+            var some = "/some.png";
+            var few = "/few.png";
+            var empty = "/empty.png";
+
+            var storesMarkers = [];
+            var selectedMarker  = null;
+            var selectedinfoWindow  = null;
+            var centerMarker = null;
+
+            var container = document.getElementById('map');
+            var options = {
+                center: new kakao.maps.LatLng(33.450701, 126.570667),
+                level: 5,
+            };
+
+            var map = new kakao.maps.Map(container, options);
+
+            //지도이동
+            function panTo(latitude,longitude) {
+                var moveLatLon = new kakao.maps.LatLng(latitude,longitude);
+                map.panTo(moveLatLon);
+            }
+
+            function markerMap(latitude,longitude){
+                if(centerMarker!=null){
+                    centerMarker.setMap(null);
+                }
+                var markerPosition  = new kakao.maps.LatLng(latitude,longitude); 
+                var marker = new kakao.maps.Marker({
+                    position: markerPosition
+                });
+                marker.setMap(map);
+                centerMarker = marker;
+            }
+
+            function multiMarkerMap(positions){
+
+                var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),    
+                    marker = createMarker(storePositions[i], markerImage);  
+                var mapContainer = document.getElementById('map'), // 지도를 표시할 div  
+                    mapOption = { 
+                        center: new kakao.maps.LatLng(33.450701, 126.570667), // 지도의 중심좌표
+                        level: 5 // 지도의 확대 레벨
+                    };
+
+                var map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
+
+                for (var i = 0; i < positions.length; i ++) {
+                    // 마커를 생성합니다
+                    var marker = new kakao.maps.Marker({
+                        map: map, // 마커를 표시할 지도
+                        position: positions[i].latlng // 마커의 위치
+                    });
+                }
+
+
+
+            }
+
+            $(document).ready(function(){
+                var allowType=true;
+                if(confirm("현재 위치를 위하여 위치정보를 사용합니다. 동의하시겠습니까? (미동의시 이용이 불가능할수 있습니다.)") == true){
+                    allowType=false;
+                }else {
+                    window.close(); // 일반적인 현재 창 닫기
+                }
+                var latitude = "";
+                var longitude = "";
+                var radius = "5000";
+
+                $('#my-spinner').show(function(){
+                    getStore(allowType);
+                });
+
+                $('#reLoad').on('click',function(){
+                    $('#my-spinner').show(function(){
+                        getStore(true);
+                    });
+                })
+                function getStore(type){
+                    if("geolocation" in navigator) {
+                        // Geolocation API가 있는 브라우저라면, 
+                        map.setZoomable(true);
+
+
+                        navigator.geolocation.getCurrentPosition(function(pos) {
+
+                            // 마커를 표시할 위치와 내용을 가지고 있는 객체 배열입니다 
+                            var positions = [
+                                {
+                                    content: '<div>카카오</div>', 
+                                    latlng: new kakao.maps.LatLng(33.450705, 126.570677)
+                                },
+                                {
+                                    content: '<div>생태연못</div>', 
+                                    latlng: new kakao.maps.LatLng(33.450936, 126.569477)
+                                },
+                                {
+                                    content: '<div>텃밭</div>', 
+                                    latlng: new kakao.maps.LatLng(33.450879, 126.569940)
+                                },
+                                {
+                                    content: '<div>근린공원</div>',
+                                    latlng: new kakao.maps.LatLng(33.451393, 126.570738)
+                                }
+                            ];
+
+                            if(!type){
+                                latitude = pos.coords.latitude;
+                                longitude = pos.coords.longitude;
+                            }else{
+                                var center = map.getCenter(); 
+                                latitude = center.getLat();
+                                longitude = center.getLng();
+
+                                setStoresMarkers(null);
+                                storesMarkers=[];
+                            }
+                            panTo(latitude,longitude);
+                            markerMap(latitude,longitude);
+
+                            console.log(latitude);
+                            console.log(longitude);
+                            var url = "https://8oi9s0nnth.apigw.ntruss.com/corona19-masks/v1/storesByGeo/json?lat="+latitude+"&lng="+longitude+"&m="+radius;
+
+                            $.ajax({
+                                type: 'GET',
+                                url: url,
+                                dataType: 'json',
+                                async: false,
+                                success: function(res) {
+                                    console.log(res);
+                                    if(res.stores.length>0){
+                                        for(var i=0; i<res.stores.length; i++){
+                                            var lat = res.stores[i].lat;
+                                            var lng = res.stores[i].lng;
+                                            var addr = res.stores[i].addr;
+                                            var name = res.stores[i].name;
+                                            var remain = res.stores[i].remain_stat;
+                                            var created_at = res.stores[i].created_at;
+                                            var stock_at = res.stores[i].stock_at;
+
+                                            var count = "품절";
+
+                                            if(remain=="plenty"){
+                                                count = "100개 이상";
+                                            }else if(remain=="some"){
+                                                count = "30개이상 100개 미만";
+                                            }else if(remain=="few"){
+                                                count = "2개이상 30개미만"
+                                            }else{
+                                                count = "품절";
+                                            }
+
+                                            var content = '<div style="font-size:10px;">';
+                                            content += name+"<br>";
+                                            //content += '<span style="font-size:8px;">'+addr+"</span><br>";
+                                            content += "재고 : "+count+"<br>";
+                                            content += "기준시각 : "+created_at+"<br>";
+                                            content += "입고시간 "+stock_at+"";
+
+                                            content +="</div>";
+                                            var storePosition = new kakao.maps.LatLng(lat, lng);
+                                            var marker = createStoreMarkers(storePosition,remain,content);
+                                            storesMarkers.push(marker);
+                                        }
+                                        //panTo(lat, lng);
+                                    }
+                                },
+                                complete : function(){
+                                    setStoresMarkers(map);
+                                    $('#my-spinner').hide();
+                                }
+                            });
+
+                            console.log(url);
+                            //console.log(getUrl(latitude,longitude,"10000"));
+                        });
+
+
+                    } else {
+                        alert("지원하지 않는 브라우저입니다. 구글 크롬을 이용해주세요");
+                        $('#my-spinner').hide();
+                    }
+                }
+                // 마커들의 지도 표시 여부를 설정하는 함수입니다
+                function setStoresMarkers(map) {        
+                    for (var i = 0; i < storesMarkers.length; i++) {  
+                        storesMarkers[i].setMap(map);
+                    }        
+                }
+
+
+                // 마커이미지의 주소와, 크기, 옵션으로 마커 이미지를 생성하여 리턴하는 함수입니다
+                function createMarkerImage(src, size, options) {
+                    var markerImage = new kakao.maps.MarkerImage(src, size, options);
+                    return markerImage;            
+                }
+
+                // 좌표와 마커이미지를 받아 마커를 생성하여 리턴하는 함수입니다
+                function createMarker(position, image, content) {
+                    var marker = new kakao.maps.Marker({
+                        position: position,
+                        image: image,
+                        removable : true
+                    });
+
+                    // 마커에 표시할 인포윈도우를 생성합니다 
+                    var infowindow = new kakao.maps.InfoWindow({
+                        content: content // 인포윈도우에 표시할 내용
+                    });
+
+                    // 마커에 mouseover 이벤트와 mouseout 이벤트를 등록합니다
+                    // 이벤트 리스너로는 클로저를 만들어 등록합니다 
+                    // for문에서 클로저를 만들어 주지 않으면 마지막 마커에만 이벤트가 등록됩니다
+                    //kakao.maps.event.addListener(marker, 'mouseover', makeOverListener(map, marker, infowindow));
+                    kakao.maps.event.addListener(marker, 'click', makeOverListener(map, marker, infowindow));
+                    //kakao.maps.event.addListener(marker, 'mouseout', makeOutListener(infowindow));
+
+                    return marker;  
+                }   
+
+                //마커를 생성하고 편의점 마커 배열에 추가하는 함수입니다
+                function createStoreMarkers(storePosition,type,content) {
+                    var markerImageSrc = null;
+
+                    if(type=="plenty"){
+                        markerImageSrc = plenty;
+                    }else if(type=="some"){
+                        markerImageSrc = some; 
+                    }else if(type=="few"){
+                        markerImageSrc = few;
+                    }else{
+                        markerImageSrc = empty;
+                    }
+
+                    if(markerImageSrc==null){
+                        return null;
+                    }
+                    /*
+                    var imageSize = new kakao.maps.Size(30, 20),
+                        imageOptions = {   
+                            spriteOrigin: new kakao.maps.Point(10, 36),    
+                            spriteSize: new kakao.maps.Size(36, 98)  
+                        };
+                    */
+
+                    var imageSize = new kakao.maps.Size(20, 15),
+                        imageOptions = {   
+                            spriteOrigin: new kakao.maps.Point(0, 15),    
+                            spriteSize: new kakao.maps.Size(20, 50)  
+                        };
+                    var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),    
+                        marker = createMarker(storePosition, markerImage, content);  
+
+                    return marker
+                }
+
+                // 인포윈도우를 표시하는 클로저를 만드는 함수입니다 
+                function makeOverListener(map, marker, infowindow) {
+                    if (selectedMarker !== marker) {
+                        return function() {
+                            if(selectedinfoWindow != null){
+                                selectedinfoWindow.close();
+                            }
+                            selectedMarker = marker;
+                            selectedinfoWindow = infowindow;
+                            infowindow.open(map, marker);
+                        };
+                    }else{
+                        return function() {
+                            if(selectedinfoWindow != null){
+                                selectedinfoWindow.close();
+                            }
+                            selectedinfoWindow = null;
+                            selectedMarker = null;
+                        };
+                    }
+                }
+
+                // 인포윈도우를 닫는 클로저를 만드는 함수입니다 
+                function makeOutListener(infowindow) {
+                    return function() {
+                        infowindow.close();
+                    };
+                }
+
+                //multiMarkerMap();
+
+                function getUrl(latitude,longitude,radius){
+                    var serviceKey = "mJ5We2RWFUspg3v9elDSHvXICRE7fUQLxFZB19biBibnjyUDtALsaSH3yD8ZjMM6hLXntwoCiD1rm8WKUqWRnQ%3D%3D";
+                    var pageNo = "";
+                    var numOfRows = "";
+                    var sidoCd = "";
+                    var sgguCd = "";
+                    var emdongNm = "";
+                    var yadmNm = "";
+                    var xPos = "127.0965441345503";
+                    var yPos = "37.60765568913871";
+
+                    xPos = longitude;
+                    yPos = latitude;
+
+                    var url = "http://apis.data.go.kr/B551182/pharmacyInfoService/getParmacyBasisList?serviceKey="+serviceKey+"&pageNo="+pageNo+"&numOfRows="+numOfRows+"&sidoCd="+sidoCd+"&sgguCd="+sgguCd+"&emdongNm="+emdongNm+"&yadmNm="+yadmNm+"&xPos="+xPos+"&yPos="+yPos+"&radius="+radius;
+
+                    var url = "http://apis.data.go.kr/B551182/pharmacyInfoService/getParmacyBasisList?serviceKey="+serviceKey+"&xPos="+xPos+"&yPos="+yPos+"&radius="+radius;
+                    $.ajax({
+                        type: 'GET',
+                        url: url,
+                        async: false,
+                        success: function(res) {
+                            console.log(res);
+                        },
+                        complete : function(){
+
+                        }
+                    });
+                    return url;
+                }
+            });
+
+
+
+            //http://apis.data.go.kr/B551182/pharmacyInfoService/getParmacyBasisList?serviceKey=mJ5We2RWFUspg3v9elDSHvXICRE7fUQLxFZB19biBibnjyUDtALsaSH3yD8ZjMM6hLXntwoCiD1rm8WKUqWRnQ%3D%3D&pageNo=1&numOfRows=10&sidoCd=110000&sgguCd=110019&emdongNm=%EC%8B%A0%EB%82%B4%EB%8F%99&yadmNm=%EC%98%A8%EB%88%84%EB%A6%AC%EA%B1%B4%EA%B0%95&xPos=127.0965441345503&yPos=37.60765568913871&radius=3000
+        </script>
+    </body>
+</html>
