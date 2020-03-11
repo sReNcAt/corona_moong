@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <title>공적 마스크 지도</title>
         <meta name="viewport" content="width=device-width, user-scalable=no">
         <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=87066da1cea133cd68af001bfc14d3e4"></script>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
@@ -57,6 +58,53 @@
         </style>
     </head>
     <body>
+        <img src="https://avatars1.githubusercontent.com/u/26794947?s=460&v=4" style="display: none;">
+        <div class="modal" id="myModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">마스크 5부제 정보</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>1인당 2개 구매, 신분증 지참 필수</p>
+                        <table class="table table-striped table-dark">
+                            <thead>
+                                <tr>
+                                    <td class="">요일</td><td class="">출생연도 끝자리</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="">월요일</td><td class="">1,6</td>
+                                </tr>
+                                <tr>
+                                    <td class="">화요일</td><td class="">2,7</td>
+                                </tr>
+                                <tr>
+                                    <td class="">수요일</td><td class="">3,8</td>
+                                </tr>
+                                <tr>
+                                    <td class="">목요일</td><td class="">4,9</td>
+                                </tr>
+                                <tr>
+                                    <td class="">금요일</td><td class="">5,0</td>
+                                </tr>
+                                <tr>
+                                    <td class="">토요일</td><td class="">모두</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id='my-spinner'>
             <div><span>
                 <img src='//cdnjs.cloudflare.com/ajax/libs/galleriffic/2.0.1/css/loader.gif'>
@@ -65,32 +113,43 @@
         <div>
             <div class="content" id="map"></div>
         </div>
+        <br>
         <div class="container">
-            <button class="btn btn-primary" id="reLoad">지도 중심으로 불러오기</button><br>
-            <u style="font-size:10px;">* 꼭 사파리, 크롬등 브라우저로 실행해주세요<br>
-                카카오톡,페이스북,인스타등에서 링크로 들어온경우 미작동 가능성 존재</u>
-            <h5>위치 반경 5KM 이내만 표시됩니다.</h5>
-            <h6><u>한국정보화진흥원 공공데이터활용지원센터에서</u><br> 공개한 자료를 바탕으로 제작되었으며</h6>
-            <h6><u>3월 15일까지는 서비스의 안정적 운영을 지켜보기 위하여 베타서비스 자료</u><br>를 제공한다고 합니다.</h6>
-            <h6>서비스되는 재고 현황 정보는 데이터 처리 및<br>전송으로 인해 실제 현장 판매처의 현황과<br><u>5분~10분</u> 정도의 차이가 있습니다.</h6>
-            <h6> 일부 약국에서는 번호표 배부 후 판매하는 약국도 있어 서비스되는 정보가 번호표 배부 현황을 반영하지는 못합니다.</h6>
-            마스크 재고 현황은 4단계 구간 정보로 제공하며<br>
-            <table class="table">
-                <tr>
-                    <td class="table-success">100개 이상 : 충분</td><td class="table-success">녹색</td>
-                </tr>
-                <tr>
-                    <td class="table-warning">100개 미만(99개~30개) : 보통</td><td class="table-warning">노랑색</td>
-                </tr>
-                <tr>
-                    <td class="table-danger">30개 미만(29개~2개) : 부족</td><td class="table-danger">빨강색</td>
-                </tr>
-                <tr>
-                    <td class="table-dark">1개~0개 : 없음 또는 판매전</td><td class="table-dark">회색</td>
-                </tr>
-            </table>
-            <u>서버에...데이터 일체 저장하지 않습니다.</u>
-            문의 : srencat@naver.com
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-primary btn-sm pull-left" id="reLoad">화면 기준 불러오기</button>
+                </div>
+
+                <div class="col">
+                    <button class="btn btn-success btn-sm pull-right" id="showModal">마스크 5부제 정보</button><br>
+                </div>
+            </div>
+            <div>
+                <u style="font-size:10px;">* 꼭 사파리, 크롬등 브라우저로 실행해주세요<br>
+                    카카오톡,페이스북,인스타등에서 링크로 들어온경우 미작동 가능성 존재</u>
+                <h5>위치 반경 5KM 이내만 표시됩니다.</h5>
+                <h6><u>한국정보화진흥원 공공데이터활용지원센터에서</u><br> 공개한 자료를 바탕으로 제작되었으며</h6>
+                <h6><u>3월 15일까지는 서비스의 안정적 운영을 지켜보기 위하여 베타서비스 자료</u><br>를 제공한다고 합니다.</h6>
+                <h6>서비스되는 재고 현황 정보는 데이터 처리 및<br>전송으로 인해 실제 현장 판매처의 현황과<br><u>5분~10분</u> 정도의 차이가 있습니다.</h6>
+                <h6> 일부 약국에서는 번호표 배부 후 판매하는 약국도 있어 서비스되는 정보가 번호표 배부 현황을 반영하지는 못합니다.</h6>
+                마스크 재고 현황은 4단계 구간 정보로 제공하며<br>
+                <table class="table">
+                    <tr>
+                        <td class="table-success">100개 이상 : 충분</td><td class="table-success">녹색</td>
+                    </tr>
+                    <tr>
+                        <td class="table-warning">100개 미만(99개~30개) : 보통</td><td class="table-warning">노랑색</td>
+                    </tr>
+                    <tr>
+                        <td class="table-danger">30개 미만(29개~2개) : 부족</td><td class="table-danger">빨강색</td>
+                    </tr>
+                    <tr>
+                        <td class="table-dark">1개~0개 : 없음 또는 판매전</td><td class="table-dark">회색</td>
+                    </tr>
+                </table>
+                <u>서버에...데이터 일체 저장하지 않습니다.</u><br>
+                문의 : srencat@naver.com
+            </div>
         </div>
         <script>
 
@@ -173,7 +232,12 @@
                     $('#my-spinner').show(function(){
                         getStore(true);
                     });
-                })
+                });
+
+                $('#showModal').on('click',function(){
+                    $('#myModal').modal({backdrop:true});
+                });
+
                 function getStore(type){
                     if("geolocation" in navigator) {
                         // Geolocation API가 있는 브라우저라면, 
@@ -346,7 +410,7 @@
                         };
                     */
 
-                    var imageSize = new kakao.maps.Size(20, 20),
+                    var imageSize = new kakao.maps.Size(25, 25),
                         imageOptions = {   
                             spriteOrigin: new kakao.maps.Point(0,0),    
                             spriteSize: new kakao.maps.Size(20, 20)  
